@@ -31,6 +31,10 @@ class CreateTableOrders extends Migration
             $table->uuid('product_id')->index();
             $table->foreign('product_id')->references('id')->on('products');
             $table->integer('amount');
+            $table->integer('selling_price');
+            $table->integer('actual_price');
+            $table->string('discount');
+            $table->dateTime('sales_date');
             $table->timestamps();
 
             $table->primary('id');
