@@ -16,7 +16,11 @@ class OrderDetail extends Model
     protected $fillable = [
       'order_id',
       'product_id',
-      'amount'
+      'amount',
+      'selling_price',
+      'actual_price',
+      'discount',
+      'sales_date'
     ];
     
     protected $hidden = [

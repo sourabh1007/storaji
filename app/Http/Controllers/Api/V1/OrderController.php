@@ -98,7 +98,11 @@ class OrderController extends Controller
                     $order_detail = OrderDetail::create([
                         'order_id' => $order->id,
                         'product_id' => $product->id,
-                        'amount' => $std->order_detail->amount
+                        'amount' => $std->order_detail->amount,
+                        'selling_price' => $std->order_detail->selling_price,
+                        'actual_price' => $std->order_detail->actual_price,
+                        'discount' => $std->order_detail->discount,
+                        'sales_date' => $std->order_detail->sales_date
                     ]);
                 }
             });
@@ -117,7 +121,11 @@ class OrderController extends Controller
                 $order_detail = OrderDetail::create([
                     'order_id' => $order->id,
                     'product_id' => $product->id,
-                    'amount' => $request->input('order_detail.amount')
+                    'amount' => $request->input('order_detail.amount'),
+                    'selling_price' =>  $request->input('order_detail.selling_price'),
+                    'actual_price' =>  $request->input('order_detail.actual_price'),
+                    'discount' =>  $request->input('order_detail.discount'),
+                    'sales_date' => $request->input('order_detail.sales_date')
                 ]);
             }
         }

@@ -19,6 +19,8 @@ class CreateTableOrders extends Migration
             $table->foreign('customer_id')->references('id')->on('customers');
             $table->uuid('company_id')->index();
             $table->foreign('company_id')->references('id')->on('companies');
+            $table->dateTime('deleted_at');
+
             $table->timestamps();
 
             $table->primary('id');
