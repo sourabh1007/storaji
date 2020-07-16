@@ -31,26 +31,28 @@ class StatsController extends Controller
                    'products.company_id' => Auth::user()->company->id,
                    'orders.deleted_at' => null
                   ])
-                  ->select(DB::raw('product_id, count(product_id) as unit, amount'))
+                  ->select(DB::raw('product_id, count(product_id) as unit, amount, sum(order_details.selling_price) as selling_price, sum(order_details.actual_price) as actual_price'))
                   ->groupBy('product_id')
                   ->get();
-        
+
         $_pre = Order::with(['order_detail.product', 'customer'])
                 ->where('company_id', Auth::user()->company->id);
-        
-        $currentWeekRevenue = $_pre
-          ->whereBetween('created_at', [
-            $dt->startOfWeek()->toDateTimeString(),
-            $dt->endOfWeek()->toDateTimeString()
-          ])
-          ->get();
 
-        $lastWeekRevenue = $_pre
-          ->whereBetween('created_at', [
-            $lt->startOfWeek()->toDateTimeString(),
-            $lt->endOfWeek()->toDateTimeString()
-          ])
-          ->get();
+        $currentWeekRevenue = $_pre->whereHas('order_detail', function($q) use ($dt) {
+              $q->whereBetween('sales_date', [
+                  $dt->startOfWeek()->toDateTimeString(),
+                  $dt->endOfWeek()->toDateTimeString()
+              ]);
+        })
+        ->get();
+
+        $lastWeekRevenue =  $_pre->whereHas('order_detail', function($q) use ($lt) {
+               $q->whereBetween('sales_date', [
+                    $lt->startOfWeek()->toDateTimeString(),
+                    $lt->endOfWeek()->toDateTimeString()
+               ]);
+        })
+        ->get();
 
         $mapToZero = function($v) {
           return 0;
@@ -70,20 +72,20 @@ class StatsController extends Controller
         foreach ($weeks as $index) {
           foreach ($currentWeekRevenue as $current) {
             $curdate = $dt->startOfWeek()->addDays($index + 1);
-            $dbdate = Carbon::createFromFormat('Y-m-d H:i:s', $current->created_at)->format('Y-m-d');
+            $dbdate = Carbon::createFromFormat('Y-m-d H:i:s', $current->order_detail->sales_date)->format('Y-m-d');
 
             if($curdate->format('Y-m-d') === $dbdate) {
-              $revenue = $current->order_detail->product->selling_price * $current->order_detail->amount;
+              $revenue = $current->order_detail->selling_price * $current->order_detail->amount;
               $graph->current[$curdate->dayOfWeek] += $revenue;
             }
           }
           
           foreach ($lastWeekRevenue as $last) {
             $curdate = $lt->startOfWeek()->addDays($index + 1);
-            $dbdate = Carbon::createFromFormat('Y-m-d H:i:s', $last->created_at)->format('Y-m-d');
+            $dbdate = Carbon::createFromFormat('Y-m-d H:i:s', $last->order_detail->sales_date)->format('Y-m-d');
 
             if($curdate->format('Y-m-d') === $dbdate) {
-              $revenue = $last->order_detail->product->selling_price * $last->order_detail->amount;
+              $revenue = $last->order_detail->selling_price * $last->order_detail->amount;
               $graph->last[$curdate->dayOfWeek] += $revenue;
             }
           }
@@ -93,8 +95,9 @@ class StatsController extends Controller
           $pre = DB::table('products')
                      ->where('company_id', Auth::user()->company->id)
                      ->find($index->product_id);
-          $cost = ($pre->cost * $index->unit) * ($pre->stock + $index->amount);
-          $revenue = ($pre->selling_price * $index->unit) * $index->amount;
+          $cost = $index->actual_price;
+          $revenue = $index->selling_price;
+
           $stats->cost += $cost;
           $stats->revenue += $revenue;
           $stats->profit += $revenue - $cost;
@@ -106,7 +109,7 @@ class StatsController extends Controller
           'orders' => $orders,
           'stats' => $stats,
           'graph' => $graph
-        ]){
+        ]) {
           $this->content['status'] = 200;
           return response()->json($this->content, $this->content['status'], [], JSON_NUMERIC_CHECK);
         }
