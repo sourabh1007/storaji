@@ -45,10 +45,12 @@ class OrderController extends Controller
             }
 
             if(is_object($params->date_range) && ($params->date_range->from && $params->date_range->to)){
-                $order = $order->whereBetween('created_at', [
-                    Carbon::createFromFormat('m/d/Y', $params->date_range->from)->format('Y-m-d')." 00:00:00",
-                    Carbon::createFromFormat('m/d/Y', $params->date_range->to)->format('Y-m-d')." 23:59:59"
-                ]);
+                $order = $order->whereHas('order_detail', function($q) use ($params) {
+                  $q->whereBetween('sales_date', [
+                      Carbon::createFromFormat('m/d/Y', $params->date_range->from)->format('Y-m-d')." 00:00:00",
+                      Carbon::createFromFormat('m/d/Y', $params->date_range->to)->format('Y-m-d')." 23:59:59"
+                  ]);
+                });
             }
         }
 
