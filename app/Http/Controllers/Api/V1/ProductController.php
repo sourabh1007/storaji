@@ -48,7 +48,7 @@ class ProductController extends Controller
             }
         }
 
-        if($this->content['data'] = $product->get()){
+        if($this->content['data'] = $product->orderBy('name', 'asc')->get()){
           $this->content['status'] = 200;
           return response()->json($this->content, $this->content['status'], [], JSON_NUMERIC_CHECK);
         }
