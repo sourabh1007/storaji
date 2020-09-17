@@ -33,7 +33,7 @@ class OrderDetail extends Model
      *
      * @var array
      */
-    protected $dates = ['deleted_at'];
+    protected $dates = ['deleted_at', 'sales_date'];
 
     /**
      * Indicates if the IDs are auto-incrementing.
